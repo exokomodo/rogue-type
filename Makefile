@@ -4,12 +4,10 @@ SHELL := /usr/bin/env
 .ONESHELL:
 .SILENT:
 
-LUA_VERSION := 5.5
-
 ##@ Development Environment
 
 .PHONY: setup
-setup: setup/lua setup/luarocks setup/love setup/luacheck setup/busted ## Install all development dependencies
+setup: setup/luarocks setup/love setup/luacheck setup/busted ## Install all development dependencies
 
 .PHONY: setup/love
 setup/love: ## Install LÖVE2D
@@ -20,17 +18,6 @@ setup/love: ## Install LÖVE2D
 	else
 		sudo apt-get update
 		sudo apt-get install -y love
-	fi
-
-.PHONY: setup/lua
-setup/lua: ## Install lua
-	if command -v lua &>/dev/null; then
-		echo "lua is already installed"
-	elif [ "$$(uname)" = "Darwin" ]; then
-		brew install lua@$(LUA_VERSION)
-	else
-		sudo apt-get update
-		sudo apt-get install -y lua$(LUA_VERSION)
 	fi
 
 .PHONY: setup/luarocks
