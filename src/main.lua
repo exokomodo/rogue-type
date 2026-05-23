@@ -9,6 +9,7 @@ local Shop    = require("shop")
 local HUD     = require("hud")
 local RNG     = require("rng")
 local ScrapMgr = require("scrap")
+local Scores  = require("scores")
 
 -- Game constants
 local SCREEN_W = 960
@@ -28,7 +29,13 @@ local boss
 
 local current_sector
 local current_wave
-local wave_clear_timer  -- brief pause before shop/boss
+local waves_cleared_total  -- total waves cleared across all sectors
+local wave_clear_timer     -- brief pause before shop/boss
+
+-- Seed input & daily challenge
+local seed_input = ""       -- typed seed string on menu
+local daily_mode = false    -- true when running daily challenge
+local score_saved = false   -- prevent double-saving on game over
 
 -- Stars background
 local stars = {}
@@ -66,19 +73,32 @@ local function draw_stars()
   end
 end
 
+--- Compute today's daily challenge seed: YYYYMMDD as integer.
+local function daily_seed()
+  local d = os.date("*t")
+  return d.year * 10000 + d.month * 100 + d.day
+end
+
 ----------------------------------------------------------------------
 -- State transitions
 ----------------------------------------------------------------------
 
-local function start_run()
-  seed = os.time() * 1000 + math.floor(os.clock() * 1000)
+local function start_run(use_seed, is_daily)
+  if use_seed then
+    seed = use_seed
+  else
+    seed = os.time() * 1000 + math.floor(os.clock() * 1000)
+  end
+  daily_mode = is_daily or false
   rng = RNG.new(seed)
   bullets = Bullets.new()
   player = Player.new(bullets)
   scrap_mgr = ScrapMgr.new()
   current_sector = 1
   current_wave = 1
+  waves_cleared_total = 0
   wave_clear_timer = 0
+  score_saved = false
   wave = Wave.new(rng, current_sector, current_wave, SCREEN_W, SCREEN_H)
   boss = nil
   shop = nil
@@ -114,6 +134,14 @@ local function next_wave()
   state = "playing"
 end
 
+--- Save score on game over (called once).
+local function save_run_score()
+  if score_saved then return end
+  score_saved = true
+  local score = Scores.calculate(player.scrap, current_sector, waves_cleared_total)
+  Scores.save(seed, score, current_sector, daily_mode)
+end
+
 ----------------------------------------------------------------------
 -- LÖVE callbacks
 ----------------------------------------------------------------------
@@ -121,8 +149,10 @@ end
 function love.load()
   love.graphics.setBackgroundColor(0.04, 0.04, 0.08)
   love.graphics.setDefaultFilter("nearest", "nearest")
+  love.keyboard.setKeyRepeat(true)
   init_stars()
   state = "menu"
+  seed_input = ""
 end
 
 function love.update(dt)
@@ -151,6 +181,7 @@ function love.update(dt)
 
     -- Player death
     if not player.alive then
+      save_run_score()
       state = "gameover"
       return
     end
@@ -159,6 +190,7 @@ function love.update(dt)
     if wave.cleared then
       wave_clear_timer = wave_clear_timer + dt
       if wave_clear_timer > 0.8 then
+        waves_cleared_total = waves_cleared_total + 1
         if current_wave >= WAVES_PER_SECTOR then
           enter_boss()
         else
@@ -192,6 +224,7 @@ function love.update(dt)
     end
 
     if not player.alive then
+      save_run_score()
       state = "gameover"
       return
     end
@@ -212,14 +245,46 @@ function love.draw()
 
   if state == "menu" then
     love.graphics.setColor(0.2, 0.8, 1, 1)
-    love.graphics.printf("ROGUE TYPE", 0, SCREEN_H / 2 - 60, SCREEN_W, "center")
+    love.graphics.printf("ROGUE TYPE", 0, 60, SCREEN_W, "center")
 
     love.graphics.setColor(1, 1, 1, 0.8)
-    love.graphics.printf("A Horizontal Bullet Hell Roguelite", 0, SCREEN_H / 2 - 30, SCREEN_W, "center")
+    love.graphics.printf("A Horizontal Bullet Hell Roguelite", 0, 90, SCREEN_W, "center")
 
+    -- Seed input field
+    love.graphics.setColor(0.7, 0.7, 0.7, 0.8)
+    love.graphics.printf("Enter seed (optional):", 0, 140, SCREEN_W, "center")
+
+    -- Input box
+    local box_w = 220
+    local box_x = (SCREEN_W - box_w) / 2
+    local box_y = 160
+    love.graphics.setColor(0.15, 0.15, 0.2, 0.9)
+    love.graphics.rectangle("fill", box_x, box_y, box_w, 24)
+    love.graphics.setColor(0.4, 0.6, 0.8, 0.8)
+    love.graphics.rectangle("line", box_x, box_y, box_w, 24)
+
+    -- Typed seed text with blinking cursor
+    local display = seed_input
+    if math.floor(love.timer.getTime() * 2) % 2 == 0 then
+      display = display .. "_"
+    end
+    love.graphics.setColor(0.2, 1, 0.6, 1)
+    love.graphics.printf(display, box_x + 6, box_y + 4, box_w - 12, "left")
+
+    -- Start prompt
     love.graphics.setColor(0.6, 0.6, 0.6, 0.7 + math.sin(love.timer.getTime() * 3) * 0.3)
-    love.graphics.printf("Press SPACE or ENTER to start", 0, SCREEN_H / 2 + 30, SCREEN_W, "center")
+    love.graphics.printf("Press ENTER or SPACE to start", 0, 200, SCREEN_W, "center")
 
+    -- Daily challenge
+    love.graphics.setColor(1, 0.8, 0.2, 0.9)
+    love.graphics.printf("Press D for DAILY CHALLENGE", 0, 228, SCREEN_W, "center")
+    love.graphics.setColor(0.6, 0.5, 0.15, 0.6)
+    love.graphics.printf("(same seed for everyone today)", 0, 246, SCREEN_W, "center")
+
+    -- Top scores
+    Scores.draw_top(0, 290, SCREEN_W, 3)
+
+    -- Controls
     love.graphics.setColor(0.4, 0.4, 0.4, 0.6)
     love.graphics.printf(
       "WASD/Arrows to move  |  SPACE/Z to shoot  |  X to launch/recall pod",
@@ -238,7 +303,7 @@ function love.draw()
       love.graphics.printf("WAVE CLEARED!", 0, SCREEN_H / 2 - 10, SCREEN_W, "center")
     end
 
-    HUD.draw(player, current_sector, current_wave, seed, SCREEN_W)
+    HUD.draw(player, current_sector, current_wave, seed, SCREEN_W, daily_mode)
 
   elseif state == "shop" then
     shop:draw(SCREEN_W, SCREEN_H, player.scrap)
@@ -255,19 +320,30 @@ function love.draw()
       love.graphics.printf("BOSS DEFEATED!", 0, SCREEN_H / 2 - 10, SCREEN_W, "center")
     end
 
-    HUD.draw(player, current_sector, "BOSS", seed, SCREEN_W)
+    HUD.draw(player, current_sector, "BOSS", seed, SCREEN_W, daily_mode)
 
   elseif state == "gameover" then
     love.graphics.setColor(0.9, 0.1, 0.1, 1)
-    love.graphics.printf("GAME OVER", 0, SCREEN_H / 2 - 50, SCREEN_W, "center")
+    love.graphics.printf("GAME OVER", 0, SCREEN_H / 2 - 70, SCREEN_W, "center")
 
     love.graphics.setColor(1, 1, 1, 0.8)
     local status = "Sector " .. current_sector .. " - Wave " .. tostring(current_wave)
-    love.graphics.printf(status, 0, SCREEN_H / 2 - 20, SCREEN_W, "center")
-    love.graphics.printf("Scrap collected: " .. player.scrap, 0, SCREEN_H / 2, SCREEN_W, "center")
+    love.graphics.printf(status, 0, SCREEN_H / 2 - 40, SCREEN_W, "center")
+    love.graphics.printf("Scrap collected: " .. player.scrap, 0, SCREEN_H / 2 - 20, SCREEN_W, "center")
 
-    love.graphics.setColor(0.6, 0.6, 0.6, 0.8)
-    love.graphics.printf("Run Seed: " .. tostring(seed), 0, SCREEN_H / 2 + 30, SCREEN_W, "center")
+    -- Score display
+    local final_score = Scores.calculate(player.scrap, current_sector, waves_cleared_total)
+    love.graphics.setColor(1, 0.85, 0.2, 1)
+    love.graphics.printf("SCORE: " .. final_score, 0, SCREEN_H / 2 + 4, SCREEN_W, "center")
+
+    -- Seed label — show 'DAILY CHALLENGE' or 'Run Seed: <seed>'
+    if daily_mode then
+      love.graphics.setColor(1, 0.8, 0.2, 1)
+      love.graphics.printf("DAILY CHALLENGE", 0, SCREEN_H / 2 + 30, SCREEN_W, "center")
+    else
+      love.graphics.setColor(0.2, 1, 0.6, 1)
+      love.graphics.printf("Run Seed: " .. tostring(seed), 0, SCREEN_H / 2 + 30, SCREEN_W, "center")
+    end
 
     love.graphics.setColor(0.5, 0.5, 0.5, 0.6 + math.sin(love.timer.getTime() * 3) * 0.3)
     love.graphics.printf("Press SPACE or ENTER to return to menu", 0, SCREEN_H / 2 + 70, SCREEN_W, "center")
@@ -284,8 +360,16 @@ function love.keypressed(key)
   end
 
   if state == "menu" then
-    if key == "space" or key == "return" then
-      start_run()
+    if key == "return" or key == "space" then
+      -- Parse typed seed or use random
+      local typed_seed = tonumber(seed_input)
+      start_run(typed_seed, false)
+      seed_input = ""
+    elseif key == "d" then
+      start_run(daily_seed(), true)
+      seed_input = ""
+    elseif key == "backspace" then
+      seed_input = seed_input:sub(1, -2)
     end
 
   elseif state == "shop" then
@@ -308,5 +392,14 @@ function love.keypressed(key)
     if key == "space" or key == "return" then
       state = "menu"
     end
+  end
+end
+
+--- love.textinput: captures typed characters for seed input on menu.
+function love.textinput(t)
+  if state ~= "menu" then return end
+  -- Only allow digits for seed input
+  if t:match("^%d$") then
+    seed_input = seed_input .. t
   end
 end
