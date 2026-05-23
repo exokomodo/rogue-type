@@ -5,7 +5,9 @@ local Enemy = {}
 Enemy.__index = Enemy
 
 --- Create a single enemy.
-function Enemy.new(x, y, rng)
+-- @param fire_fn  optional firing function(enemy, bullets, player) from PatternGrammar
+-- @param screen_h  screen height (needed by wall patterns)
+function Enemy.new(x, y, rng, fire_fn, screen_h)
   local self = setmetatable({}, Enemy)
   self.x = x
   self.y = y
@@ -21,6 +23,8 @@ function Enemy.new(x, y, rng)
   self.sin_amp = 20 + rng:random(0, 30)
   self.base_y = y
   self.time = 0
+  self.fire_fn = fire_fn  -- pattern grammar firing function
+  self.screen_h = screen_h or 540
   return self
 end
 
@@ -33,20 +37,24 @@ function Enemy:update(dt, bullets, player)
   self.x = self.x - self.speed * dt
   self.y = self.base_y + math.sin(self.time * 2 + self.sin_offset) * self.sin_amp
 
-  -- Fire at the player
+  -- Fire at the player using pattern grammar or fallback aimed shot
   self.fire_timer = self.fire_timer - dt
   if self.fire_timer <= 0 and player.alive then
     self.fire_timer = self.fire_rate
-    -- Aimed bullet toward player
-    local dx = player.x - self.x
-    local dy = (player.y + player.h / 2) - (self.y + self.h / 2)
-    local dist = math.sqrt(dx * dx + dy * dy)
-    if dist > 0 then
-      local bspeed = 200
-      bullets:fire_enemy(
-        self.x, self.y + self.h / 2 - 3,
-        dx / dist * bspeed, dy / dist * bspeed
-      )
+    if self.fire_fn then
+      self.fire_fn(self, bullets, player)
+    else
+      -- Fallback: simple aimed bullet
+      local dx = player.x - self.x
+      local dy = (player.y + player.h / 2) - (self.y + self.h / 2)
+      local dist = math.sqrt(dx * dx + dy * dy)
+      if dist > 0 then
+        local bspeed = 200
+        bullets:fire_enemy(
+          self.x, self.y + self.h / 2 - 3,
+          dx / dist * bspeed, dy / dist * bspeed
+        )
+      end
     end
   end
 end

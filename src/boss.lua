@@ -1,10 +1,12 @@
 --- Boss module.
 -- A boss with 3 phases. Spawns after wave clear. Gets more aggressive each phase.
 
+local Patterns = require("patterns")
+
 local Boss = {}
 Boss.__index = Boss
 
-function Boss.new(screen_w, screen_h, rng)
+function Boss.new(screen_w, screen_h, rng, sector)
   local self = setmetatable({}, Boss)
   self.w = 60
   self.h = 50
@@ -24,6 +26,15 @@ function Boss.new(screen_w, screen_h, rng)
   self.screen_h = screen_h
   self.move_speed = 80
   self.base_y = self.y
+
+  -- Build pattern grammar firing functions for each phase
+  local grammar = Patterns.PatternGrammar.new(rng, sector or 1)
+  self.phase_patterns = {
+    grammar:build_boss_phase(1),
+    grammar:build_boss_phase(2),
+    grammar:build_boss_phase(3),
+  }
+
   return self
 end
 
@@ -65,47 +76,8 @@ end
 function Boss:fire_pattern(bullets, player)
   local cx = self.x
   local cy = self.y + self.h / 2
-
-  if self.phase == 1 then
-    -- Aimed triple shot
-    local dx = player.x - cx
-    local dy = (player.y + player.h / 2) - cy
-    local dist = math.sqrt(dx * dx + dy * dy)
-    if dist > 0 then
-      local spd = 220
-      local nx, ny = dx / dist, dy / dist
-      for spread = -1, 1 do
-        bullets:fire_enemy(cx, cy,
-          nx * spd + ny * spread * 40,
-          ny * spd - nx * spread * 40,
-          { w = 8, h = 8 }
-        )
-      end
-    end
-
-  elseif self.phase == 2 then
-    -- Fan of 5 bullets
-    for i = 0, 4 do
-      local angle = math.rad(-40 + i * 20) + math.pi
-      bullets:fire_enemy(cx, cy,
-        math.cos(angle) * 200,
-        math.sin(angle) * 200,
-        { w = 8, h = 8 }
-      )
-    end
-
-  else
-    -- Phase 3: dense radial burst
-    local count = 10
-    for i = 0, count - 1 do
-      local angle = (i / count) * math.pi * 2 + self.time
-      bullets:fire_enemy(cx, cy,
-        math.cos(angle) * 180,
-        math.sin(angle) * 180,
-        { w = 7, h = 7 }
-      )
-    end
-  end
+  local pattern_fn = self.phase_patterns[self.phase] or self.phase_patterns[3]
+  pattern_fn(cx, cy, bullets, player)
 end
 
 function Boss:draw()
