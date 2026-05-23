@@ -1,5 +1,5 @@
-SHELL := /usr/bin/env bash
-.SHELLFLAGS := -eu -o pipefail -c
+SHELL := /usr/bin/env
+.SHELLFLAGS := bash -eu -o pipefail -c
 .DEFAULT_GOAL := help
 .ONESHELL:
 .SILENT:
