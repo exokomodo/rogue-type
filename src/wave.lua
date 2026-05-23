@@ -2,6 +2,7 @@
 -- Spawns groups of enemies per wave. Tracks when a wave is cleared.
 
 local Enemy = require("enemy")
+local Patterns = require("patterns")
 
 local Wave = {}
 Wave.__index = Wave
@@ -15,6 +16,10 @@ function Wave.new(rng, sector_num, wave_num, screen_w, screen_h)
   self.screen_w = screen_w
   self.screen_h = screen_h
   self.rng = rng
+  self.sector_num = sector_num
+
+  -- Pattern grammar for this wave's enemies
+  self.grammar = Patterns.PatternGrammar.new(rng, sector_num)
 
   -- More enemies in later sectors/waves
   self.total_enemies = 3 + wave_num + sector_num * 2
@@ -29,7 +34,8 @@ function Wave:update(dt, bullets, player, scrap_mgr)
     if self.spawn_timer <= 0 then
       self.spawn_timer = self.spawn_interval
       local y = self.rng:random(20, self.screen_h - 40)
-      local e = Enemy.new(self.screen_w + 10, y, self.rng)
+      local fire_fn = self.grammar:build_enemy_pattern()
+      local e = Enemy.new(self.screen_w + 10, y, self.rng, fire_fn, self.screen_h)
       table.insert(self.enemies, e)
       self.spawned = self.spawned + 1
     end
