@@ -92,7 +92,7 @@ local function enter_shop()
 end
 
 local function enter_boss()
-  boss = Boss.new(SCREEN_W, SCREEN_H, rng)
+  boss = Boss.new(SCREEN_W, SCREEN_H, rng, current_sector)
   bullets:clear()
   state = "boss"
 end
