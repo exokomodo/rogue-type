@@ -1,6 +1,8 @@
 --- Player ship module.
 -- Handles movement, shooting, health, and drawing.
 
+local ForcePod = require("forcepod")
+
 local Player = {}
 Player.__index = Player
 
@@ -21,6 +23,7 @@ function Player.new(bullets)
   self.invuln_time = 0        -- brief invulnerability after taking damage
   self.bullets = bullets      -- reference to shared Bullets manager
   self.alive = true
+  self.pod = ForcePod.new()
   return self
 end
 
