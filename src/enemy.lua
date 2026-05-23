@@ -1,6 +1,8 @@
 --- Enemy module.
 -- Enemies move in from the right side, fire at the player, and drop scrap on death.
 
+local Config = require("config")
+
 local Enemy = {}
 Enemy.__index = Enemy
 
@@ -68,6 +70,15 @@ function Enemy:draw()
   love.graphics.setColor(1, 1, 0.3, 1)
   love.graphics.circle("fill", self.x + 6, self.y + self.h / 2, 4)
   love.graphics.setColor(1, 1, 1, 1)
+
+  -- Debug draw
+  if Config.DEBUG_DRAW then
+    love.graphics.setColor(1, 0.2, 0.2, 1)
+    love.graphics.rectangle("line", self.x, self.y, self.w, self.h)
+    love.graphics.circle("fill", self.x + self.w / 2, self.y + self.h / 2, 2)
+    love.graphics.print("enemy", self.x, self.y - 12)
+    love.graphics.setColor(1, 1, 1, 1)
+  end
 end
 
 --- Check if the enemy has scrolled off the left side.

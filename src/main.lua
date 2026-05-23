@@ -10,6 +10,7 @@ local HUD     = require("hud")
 local RNG     = require("rng")
 local ScrapMgr = require("scrap")
 local Scores  = require("scores")
+local Config  = require("config")
 
 -- Game constants
 local SCREEN_W = 960
@@ -297,6 +298,7 @@ function love.draw()
     bullets:draw()
     player:draw()
     player.pod:draw()
+    player.pod:draw_debug_orbit(player)
 
     if wave.cleared then
       love.graphics.setColor(0.2, 1, 0.4, 1)
@@ -314,6 +316,7 @@ function love.draw()
     boss:draw()
     player:draw()
     player.pod:draw()
+    player.pod:draw_debug_orbit(player)
 
     if not boss.alive then
       love.graphics.setColor(1, 0.9, 0.2, 1)
@@ -327,79 +330,4 @@ function love.draw()
     love.graphics.printf("GAME OVER", 0, SCREEN_H / 2 - 70, SCREEN_W, "center")
 
     love.graphics.setColor(1, 1, 1, 0.8)
-    local status = "Sector " .. current_sector .. " - Wave " .. tostring(current_wave)
-    love.graphics.printf(status, 0, SCREEN_H / 2 - 40, SCREEN_W, "center")
-    love.graphics.printf("Scrap collected: " .. player.scrap, 0, SCREEN_H / 2 - 20, SCREEN_W, "center")
-
-    -- Score display
-    local final_score = Scores.calculate(player.scrap, current_sector, waves_cleared_total)
-    love.graphics.setColor(1, 0.85, 0.2, 1)
-    love.graphics.printf("SCORE: " .. final_score, 0, SCREEN_H / 2 + 4, SCREEN_W, "center")
-
-    -- Seed label — show 'DAILY CHALLENGE' or 'Run Seed: <seed>'
-    if daily_mode then
-      love.graphics.setColor(1, 0.8, 0.2, 1)
-      love.graphics.printf("DAILY CHALLENGE", 0, SCREEN_H / 2 + 30, SCREEN_W, "center")
-    else
-      love.graphics.setColor(0.2, 1, 0.6, 1)
-      love.graphics.printf("Run Seed: " .. tostring(seed), 0, SCREEN_H / 2 + 30, SCREEN_W, "center")
-    end
-
-    love.graphics.setColor(0.5, 0.5, 0.5, 0.6 + math.sin(love.timer.getTime() * 3) * 0.3)
-    love.graphics.printf("Press SPACE or ENTER to return to menu", 0, SCREEN_H / 2 + 70, SCREEN_W, "center")
-  end
-end
-
-function love.keypressed(key)
-  if key == "escape" then
-    if state == "menu" then
-      love.event.quit()
-    elseif state ~= "shop" then
-      state = "menu"
-    end
-  end
-
-  if state == "menu" then
-    if key == "return" or key == "space" then
-      -- Parse typed seed or use random
-      local typed_seed = tonumber(seed_input)
-      start_run(typed_seed, false)
-      seed_input = ""
-    elseif key == "d" then
-      start_run(daily_seed(), true)
-      seed_input = ""
-    elseif key == "backspace" then
-      seed_input = seed_input:sub(1, -2)
-    end
-
-  elseif state == "shop" then
-    local close = shop:keypressed(key, player)
-    if close then
-      if current_wave >= WAVES_PER_SECTOR then
-        -- Shop after boss defeat → advance sector
-        next_sector()
-      else
-        next_wave()
-      end
-    end
-
-  elseif state == "playing" or state == "boss" then
-    if key == "x" then
-      player.pod:toggle(player)
-    end
-
-  elseif state == "gameover" then
-    if key == "space" or key == "return" then
-      state = "menu"
-    end
-  end
-end
-
---- love.textinput: captures typed characters for seed input on menu.
-function love.textinput(t)
-  if state ~= "menu" then return end
-  -- Only allow digits for seed input
-  if t:match("^%d$") then
-    seed_input = seed_input .. t
-  end
-end
+    local status = "

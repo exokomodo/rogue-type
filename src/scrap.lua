@@ -2,6 +2,7 @@
 -- Scrap drops from dead enemies and floats toward the player for collection.
 
 local Collision = require("collision")
+local Config = require("config")
 
 local Scrap = {}
 Scrap.__index = Scrap
@@ -76,6 +77,17 @@ function Scrap:draw()
     )
   end
   love.graphics.setColor(1, 1, 1, 1)
+
+  -- Debug draw
+  if Config.DEBUG_DRAW then
+    love.graphics.setColor(1, 1, 1, 1)
+    for _, s in ipairs(self.pickups) do
+      love.graphics.rectangle("line", s.x, s.y, s.w, s.h)
+      love.graphics.circle("fill", s.x + s.w / 2, s.y + s.h / 2, 2)
+      love.graphics.print("scrap", s.x, s.y - 12)
+    end
+    love.graphics.setColor(1, 1, 1, 1)
+  end
 end
 
 function Scrap:clear()
