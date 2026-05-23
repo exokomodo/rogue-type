@@ -1,0 +1,24 @@
+# LÖVE2D
+*.love
+build/
+
+# Lua
+*.luac
+luac.out
+
+# LuaRocks
+*.rock
+*.rockspec.bak
+lua_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+*.sublime-project
+*.sublime-workspace
