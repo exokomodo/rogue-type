@@ -3,6 +3,7 @@
 
 local Enemy = require("enemy")
 local Patterns = require("patterns")
+local Audio = require("audio")
 
 local Wave = {}
 Wave.__index = Wave
@@ -48,6 +49,7 @@ function Wave:update(dt, bullets, player, scrap_mgr)
 
   -- Player bullets vs enemies
   bullets:check_hits_on_targets(self.enemies, function(dead_enemy)
+    Audio.play("enemy_death")
     scrap_mgr:spawn(dead_enemy.x, dead_enemy.y, dead_enemy.scrap_value)
   end)
 

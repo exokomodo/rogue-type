@@ -2,6 +2,7 @@
 -- Scrap drops from dead enemies and floats toward the player for collection.
 
 local Collision = require("collision")
+local Audio = require("audio")
 
 local Scrap = {}
 Scrap.__index = Scrap
@@ -43,6 +44,7 @@ function Scrap:update(dt, player)
 
     -- Collect on overlap
     if player.alive and Collision.aabb(s, player) then
+      Audio.play("scrap_pickup")
       player.scrap = player.scrap + s.value
       s.alive = false
     end

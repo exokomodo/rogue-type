@@ -10,6 +10,7 @@ local HUD     = require("hud")
 local RNG     = require("rng")
 local ScrapMgr = require("scrap")
 local Scores  = require("scores")
+local Audio   = require("audio")
 
 -- Game constants
 local SCREEN_W = 960
@@ -151,6 +152,7 @@ function love.load()
   love.graphics.setDefaultFilter("nearest", "nearest")
   love.keyboard.setKeyRepeat(true)
   init_stars()
+  Audio.init()
   state = "menu"
   seed_input = ""
 end
@@ -161,6 +163,7 @@ function love.update(dt)
   update_stars(dt)
 
   if state == "playing" then
+    Audio.update(current_sector, dt)
     player:update(dt, SCREEN_W, SCREEN_H)
     bullets:update(dt, SCREEN_W, SCREEN_H)
     scrap_mgr:update(dt, player)
@@ -200,6 +203,7 @@ function love.update(dt)
     end
 
   elseif state == "boss" then
+    Audio.update(current_sector, dt)
     player:update(dt, SCREEN_W, SCREEN_H)
     bullets:update(dt, SCREEN_W, SCREEN_H)
     scrap_mgr:update(dt, player)
