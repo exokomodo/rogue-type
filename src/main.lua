@@ -136,6 +136,13 @@ function love.update(dt)
     scrap_mgr:update(dt, player)
     wave:update(dt, bullets, player, scrap_mgr)
 
+    -- Force pod: update, absorb bullets, damage enemies
+    local pod = player.pod
+    pod:update(dt, player, SCREEN_W)
+    local absorbed = pod:absorb_bullets(bullets.enemy_bullets)
+    if absorbed > 0 then player.scrap = player.scrap + absorbed end
+    pod:check_hits_on_enemies(wave.enemies)
+
     -- Check player damage from enemy bullets
     local dmg = bullets:check_hits_on_player(player)
     if dmg > 0 then
@@ -165,6 +172,13 @@ function love.update(dt)
     bullets:update(dt, SCREEN_W, SCREEN_H)
     scrap_mgr:update(dt, player)
     boss:update(dt, bullets, player)
+
+    -- Force pod: update, absorb bullets, damage boss
+    local pod = player.pod
+    pod:update(dt, player, SCREEN_W)
+    local absorbed = pod:absorb_bullets(bullets.enemy_bullets)
+    if absorbed > 0 then player.scrap = player.scrap + absorbed end
+    pod:check_hits_on_boss(boss)
 
     -- Player bullets vs boss
     bullets:check_hits_on_targets({boss}, function(dead_boss)
@@ -207,13 +221,17 @@ function love.draw()
     love.graphics.printf("Press SPACE or ENTER to start", 0, SCREEN_H / 2 + 30, SCREEN_W, "center")
 
     love.graphics.setColor(0.4, 0.4, 0.4, 0.6)
-    love.graphics.printf("WASD/Arrows to move  |  SPACE/Z to shoot", 0, SCREEN_H - 50, SCREEN_W, "center")
+    love.graphics.printf(
+      "WASD/Arrows to move  |  SPACE/Z to shoot  |  X to launch/recall pod",
+      0, SCREEN_H - 50, SCREEN_W, "center"
+    )
 
   elseif state == "playing" then
     wave:draw()
     scrap_mgr:draw()
     bullets:draw()
     player:draw()
+    player.pod:draw()
 
     if wave.cleared then
       love.graphics.setColor(0.2, 1, 0.4, 1)
@@ -230,6 +248,7 @@ function love.draw()
     bullets:draw()
     boss:draw()
     player:draw()
+    player.pod:draw()
 
     if not boss.alive then
       love.graphics.setColor(1, 0.9, 0.2, 1)
@@ -278,6 +297,11 @@ function love.keypressed(key)
       else
         next_wave()
       end
+    end
+
+  elseif state == "playing" or state == "boss" then
+    if key == "x" then
+      player.pod:toggle(player)
     end
 
   elseif state == "gameover" then

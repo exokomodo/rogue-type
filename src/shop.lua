@@ -12,6 +12,7 @@ local UPGRADE_POOL = {
   { name = "Hull Repair",   desc = "Restore 2 HP",         cost = 6,  stat = "hp",            delta = 2 },
   { name = "Max HP Up",     desc = "+1 max HP",            cost = 10, stat = "max_hp",        delta = 1 },
   { name = "Bullet Speed",  desc = "Faster projectiles",   cost = 5,  stat = "bullet_speed",  delta = 100 },
+  { name = "Force Pod Upgrade", desc = "+Damage & absorb radius", cost = 12, stat = "pod", delta = 1 },
 }
 
 function Shop.new(rng)
@@ -22,13 +23,14 @@ function Shop.new(rng)
   return self
 end
 
---- Pick 3 random upgrades from the pool.
+--- Pick 4 random upgrades from the pool.
 function Shop:generate(rng)
   self.items = {}
   local indices = {}
   for i = 1, #UPGRADE_POOL do indices[i] = i end
-  -- Fisher-Yates shuffle (partial, 3 picks)
-  for i = #indices, #indices - 2, -1 do
+  -- Fisher-Yates shuffle (partial, 4 picks)
+  local pick_count = math.min(4, #UPGRADE_POOL)
+  for i = #indices, #indices - (pick_count - 1), -1 do
     local j = rng:random(1, i)
     indices[i], indices[j] = indices[j], indices[i]
     table.insert(self.items, UPGRADE_POOL[indices[i]])
@@ -49,6 +51,8 @@ function Shop:keypressed(key, player)
       -- Apply upgrade
       if item.stat == "hp" then
         player.hp = math.min(player.max_hp, player.hp + item.delta)
+      elseif item.stat == "pod" then
+        player.pod:upgrade()
       else
         player[item.stat] = player[item.stat] + item.delta
         -- Clamp fire rate so it doesn't go negative
