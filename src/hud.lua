@@ -3,7 +3,7 @@
 
 local HUD = {}
 
-function HUD.draw(player, sector, wave, seed, screen_w)
+function HUD.draw(player, sector, wave, seed, screen_w, daily_mode)
   love.graphics.setColor(1, 1, 1, 0.9)
 
   -- Health bar (top-left)
@@ -44,10 +44,14 @@ function HUD.draw(player, sector, wave, seed, screen_w)
   love.graphics.setColor(1, 1, 1, 0.9)
   love.graphics.printf("Sector " .. sector .. " - Wave " .. wave, 0, 8, screen_w, "center")
 
-  -- Seed (top-right)
-  love.graphics.setColor(0.6, 0.6, 0.6, 0.8)
-  local seed_text = "Seed: " .. tostring(seed)
-  love.graphics.printf(seed_text, 0, 8, screen_w - 10, "right")
+  -- Seed or Daily Challenge label (top-right)
+  if daily_mode then
+    love.graphics.setColor(1, 0.8, 0.2, 0.9)
+    love.graphics.printf("DAILY CHALLENGE", 0, 8, screen_w - 10, "right")
+  else
+    love.graphics.setColor(0.6, 0.6, 0.6, 0.8)
+    love.graphics.printf("Seed: " .. tostring(seed), 0, 8, screen_w - 10, "right")
+  end
 
   love.graphics.setColor(1, 1, 1, 1)
 end
