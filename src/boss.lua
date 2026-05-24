@@ -2,6 +2,7 @@
 -- A boss with 3 phases. Spawns after wave clear. Gets more aggressive each phase.
 
 local Patterns = require("patterns")
+local Config = require("config")
 
 local Boss = {}
 Boss.__index = Boss
@@ -110,6 +111,15 @@ function Boss:draw()
   love.graphics.rectangle("fill", self.x, self.y - 12, self.w * (self.hp / self.max_hp), 6)
 
   love.graphics.setColor(1, 1, 1, 1)
+
+  -- Debug draw
+  if Config.DEBUG_DRAW then
+    love.graphics.setColor(1, 0.5, 0, 1)
+    love.graphics.rectangle("line", self.x, self.y, self.w, self.h)
+    love.graphics.circle("fill", self.x + self.w / 2, self.y + self.h / 2, 2)
+    love.graphics.print("boss", self.x, self.y - 22)
+    love.graphics.setColor(1, 1, 1, 1)
+  end
 end
 
 return Boss

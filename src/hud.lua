@@ -1,6 +1,8 @@
 --- HUD module.
 -- Draws health, scrap, sector/wave, and seed display.
 
+local Config = require("config")
+
 local HUD = {}
 
 function HUD.draw(player, sector, wave, seed, screen_w, daily_mode)
@@ -51,6 +53,12 @@ function HUD.draw(player, sector, wave, seed, screen_w, daily_mode)
   else
     love.graphics.setColor(0.6, 0.6, 0.6, 0.8)
     love.graphics.printf("Seed: " .. tostring(seed), 0, 8, screen_w - 10, "right")
+  end
+
+  -- Debug indicator
+  if Config.DEBUG_DRAW then
+    love.graphics.setColor(1, 1, 0, 1)
+    love.graphics.printf("[DEBUG]", 0, 24, screen_w - 10, "right")
   end
 
   love.graphics.setColor(1, 1, 1, 1)

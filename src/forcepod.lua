@@ -2,6 +2,8 @@
 -- A detachable companion pod that orbits the player, absorbs enemy bullets,
 -- and can be launched as a projectile. Signature R-Type homage mechanic.
 
+local Config = require("config")
+
 local ForcePod = {}
 ForcePod.__index = ForcePod
 
@@ -160,6 +162,29 @@ function ForcePod:draw()
     self.x - ir, self.y
   )
 
+  love.graphics.setColor(1, 1, 1, 1)
+
+  -- Debug draw
+  if Config.DEBUG_DRAW then
+    love.graphics.setColor(0, 1, 1, 1)
+    -- AABB around the pod (using radius as half-size)
+    local r = self.radius
+    love.graphics.rectangle("line", self.x - r, self.y - r, r * 2, r * 2)
+    love.graphics.circle("fill", self.x, self.y, 2)
+    love.graphics.print("pod", self.x - r, self.y - r - 12)
+    -- Orbit radius circle around player center (needs player ref)
+    -- Drawn from main.lua since we need player position
+    love.graphics.setColor(1, 1, 1, 1)
+  end
+end
+
+--- Draw orbit radius circle (called from main with player ref).
+function ForcePod:draw_debug_orbit(player)
+  if not Config.DEBUG_DRAW then return end
+  love.graphics.setColor(0, 1, 1, 0.5)
+  local cx = player.x + player.w / 2
+  local cy = player.y + player.h / 2
+  love.graphics.circle("line", cx, cy, ORBIT_RADIUS)
   love.graphics.setColor(1, 1, 1, 1)
 end
 

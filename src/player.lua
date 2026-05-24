@@ -2,6 +2,7 @@
 -- Handles movement, shooting, health, and drawing.
 
 local ForcePod = require("forcepod")
+local Config = require("config")
 
 local Player = {}
 Player.__index = Player
@@ -116,6 +117,15 @@ function Player:draw()
   love.graphics.rectangle("fill", self.x - 6, self.y + 6, 8, self.h - 12)
 
   love.graphics.setColor(1, 1, 1, 1)
+
+  -- Debug draw
+  if Config.DEBUG_DRAW then
+    love.graphics.setColor(0, 1, 0, 1)
+    love.graphics.rectangle("line", self.x, self.y, self.w, self.h)
+    love.graphics.circle("fill", self.x + self.w / 2, self.y + self.h / 2, 2)
+    love.graphics.print("player", self.x, self.y - 12)
+    love.graphics.setColor(1, 1, 1, 1)
+  end
 end
 
 return Player

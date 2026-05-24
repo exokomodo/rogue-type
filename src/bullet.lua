@@ -2,6 +2,7 @@
 -- Handles both player and enemy bullets in separate lists.
 
 local Collision = require("collision")
+local Config = require("config")
 
 local Bullets = {}
 Bullets.__index = Bullets
@@ -101,6 +102,21 @@ function Bullets:draw()
     love.graphics.rectangle("fill", b.x, b.y, b.w, b.h)
   end
   love.graphics.setColor(1, 1, 1, 1)
+
+  -- Debug draw
+  if Config.DEBUG_DRAW then
+    love.graphics.setColor(1, 1, 0, 1)
+    for _, b in ipairs(self.player_bullets) do
+      love.graphics.rectangle("line", b.x, b.y, b.w, b.h)
+      love.graphics.circle("fill", b.x + b.w / 2, b.y + b.h / 2, 2)
+    end
+    love.graphics.setColor(1, 0, 1, 1)
+    for _, b in ipairs(self.enemy_bullets) do
+      love.graphics.rectangle("line", b.x, b.y, b.w, b.h)
+      love.graphics.circle("fill", b.x + b.w / 2, b.y + b.h / 2, 2)
+    end
+    love.graphics.setColor(1, 1, 1, 1)
+  end
 end
 
 --- Clear all bullets (e.g. on state transition).
