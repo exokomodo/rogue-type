@@ -2,6 +2,8 @@
 -- A detachable companion pod that orbits the player, absorbs enemy bullets,
 -- and can be launched as a projectile. Signature R-Type homage mechanic.
 
+local Audio = require("audio")
+
 local ForcePod = {}
 ForcePod.__index = ForcePod
 
@@ -31,8 +33,10 @@ end
 function ForcePod:toggle(_player)
   if self.state == "orbiting" then
     self.state = "launched"
+    Audio.play("pod_launch")
   elseif self.state == "launched" then
     self.state = "returning"
+    Audio.play("pod_recall")
   end
   -- If already returning, pressing X again does nothing extra
 end
@@ -104,6 +108,7 @@ function ForcePod:check_hits_on_enemies(enemies)
         e.hp = e.hp - self.damage
         if e.hp <= 0 then
           e.alive = false
+          Audio.play("enemy_death")
         end
       end
     end

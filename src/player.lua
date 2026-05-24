@@ -2,6 +2,7 @@
 -- Handles movement, shooting, health, and drawing.
 
 local ForcePod = require("forcepod")
+local Audio = require("audio")
 
 local Player = {}
 Player.__index = Player
@@ -55,6 +56,7 @@ function Player:update(dt, screen_w, screen_h)
   if love.keyboard.isDown("space") or love.keyboard.isDown("z") then
     if self.fire_timer <= 0 then
       self.fire_timer = self.fire_rate
+      Audio.play("shoot")
       self.bullets:fire_player(
         self.x + self.w,
         self.y + self.h / 2 - 2,
@@ -73,6 +75,7 @@ end
 --- Apply damage to the player. Respects invulnerability frames.
 function Player:take_damage(amount)
   if self.invuln_time > 0 then return end
+  Audio.play("hit")
   self.hp = self.hp - amount
   self.invuln_time = 0.8  -- brief invulnerability
   if self.hp <= 0 then

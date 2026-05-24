@@ -2,6 +2,7 @@
 -- A boss with 3 phases. Spawns after wave clear. Gets more aggressive each phase.
 
 local Patterns = require("patterns")
+local Audio = require("audio")
 
 local Boss = {}
 Boss.__index = Boss
@@ -53,10 +54,14 @@ function Boss:update(dt, bullets, player)
   end
 
   -- Update phase based on remaining HP
+  local prev_phase = self.phase
   if self.hp <= self.max_hp * 0.33 then
     self.phase = 3
   elseif self.hp <= self.max_hp * 0.66 then
     self.phase = 2
+  end
+  if self.phase ~= prev_phase then
+    Audio.play("boss_phase_change")
   end
 
   -- Vertical movement — weave gets faster in later phases
